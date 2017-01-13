@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/rancher/api-filter-proxy/manager"
-	"github.com/rancher/api-filter-proxy/service"
 	"net/http"
 	"os"
+
+	"github.com/rancher/api-filter-proxy/manager"
+	"github.com/rancher/api-filter-proxy/service"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -14,7 +15,7 @@ import (
 var VERSION = "v0.0.0-dev"
 
 func beforeApp(c *cli.Context) error {
-	if c.GlobalBool("verbose") {
+	if c.GlobalBool("debug") {
 		log.SetLevel(log.DebugLevel)
 	}
 	return nil
@@ -83,10 +84,6 @@ func main() {
 }
 
 func StartService(c *cli.Context) {
-	if c.GlobalBool("debug") {
-		log.SetLevel(log.DebugLevel)
-	}
-
 	textFormatter := &log.TextFormatter{
 		FullTimestamp: true,
 	}
@@ -102,5 +99,4 @@ func StartService(c *cli.Context) {
 
 	log.Info("Listening on ", c.GlobalString("listen"))
 	log.Fatal(http.ListenAndServe(c.GlobalString("listen"), router))
-
 }

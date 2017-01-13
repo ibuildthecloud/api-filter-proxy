@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strconv"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/gorilla/mux"
 
 	"github.com/rancher/api-filter-proxy/manager"
 	"github.com/rancher/api-filter-proxy/model"
@@ -63,6 +64,7 @@ func NewProxy(target string) (*Proxy, error) {
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
+	// why do you ignore the error?
 	path, _ := mux.CurrentRoute(r).GetPathTemplate()
 
 	log.Debugf("Request Path matched: %v", path)
@@ -84,6 +86,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// r.Header is a map[string][]string, you can cast it or just deal with the Header type.  The
+	// latter is preferred.
 	headerMap := make(map[string][]string)
 	for key, value := range r.Header {
 		headerMap[key] = value
@@ -93,6 +97,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	if proxyErr.Status != "" {
 		//error from some filter
 		log.Debugf("Error from proxy filter %v", proxyErr)
+		// What makes handling this error different from handling the other errors where you call ReturnHTTPError
+		// maybe ProxyError should actually implement Error
 		writeError(w, proxyErr)
 		return
 	}
@@ -100,6 +106,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	jsonStr, err := json.Marshal(inputBody)
 	destReq, err := http.NewRequest(r.Method, r.URL.String(), bytes.NewReader(jsonStr))
 	if err != nil {
+		// Can you make this error handling less boilerplate, you have the same two lines for each error
 		log.Errorf("Error creating new request for path %v, error: %v, body: %v", r.URL.String(), err, jsonStr)
 		ReturnHTTPError(w, r, http.StatusBadRequest, fmt.Sprintf("Error creating new request for path %v to send to destination", r.URL.String()))
 		return
